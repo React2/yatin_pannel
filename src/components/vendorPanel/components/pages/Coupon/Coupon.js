@@ -1,59 +1,129 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { AiFillDelete } from "react-icons/ai";
 import HOC from "../../layout/HOC";
-import Table from "react-bootstrap/Table";
-import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
-import axios from "axios";
+import Modal from "react-bootstrap/Modal";
 import { toast } from "react-toastify";
+import Button from "react-bootstrap/Button";
+import axios from "axios";
 import { Baseurl, Auth, showMsg } from "../../../../../Baseurl";
+import { Link } from "react-router-dom";
+import { FormGroup, Table } from "react-bootstrap";
+import { Store } from "react-notifications-component";
+import Loader1 from "../../../../../Loader/Loader";
 
 const Coupon = () => {
   const [modalShow, setModalShow] = React.useState(false);
   const [data, setData] = useState([]);
-  const token = localStorage.getItem("token");
+  const [loading, setLoading] = useState(false);
+  const [validCoupon, setValidCoupon] = useState(true);
+
+  const validHandler = async () => {
+    try {
+      const response = await axios.get(`${Baseurl}/coupon/valid`);
+      setData(response?.data?.data);
+      console.log(response?.data);
+    } catch (error) {
+      console.error("Error fetching valid coupons:", error);
+    }
+  };
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const { data } = await axios.get(`${Baseurl}coupon/all`, Auth);
-      setData(data.data);
+      const response = await axios.get(`${Baseurl}/coupon/all`, Auth());
+      setData(response?.data?.data);
+    } catch (error) {
+      console.error("Error fetching all coupons:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!validCoupon) fetchData();
+    if (validCoupon) validHandler();
+  }, [validCoupon]);
+
+  const deleteData = async (id) => {
+    try {
+      const { data } = await axios.delete(`${Baseurl}/coupon/${id}`);
+      Store.addNotification({
+        title: "Success",
+        message: "User Deleted Successfully",
+        type: "success",
+        insert: "top",
+        container: "top-right",
+        animationIn: ["animated", "fadeIn"],
+        animationOut: ["animated", "fadeOut"],
+        dismiss: {
+          duration: 3000,
+          onScreen: true,
+        },
+      });
+
+      fetchData();
     } catch (e) {
       console.log(e);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   function MyVerticallyCenteredModal(props) {
     const [couponCode, setCouponCode] = useState("");
-    const [discountPercentage, setDiscountPercentage] = useState("");
-    const [validFrom, setValidFrom] = useState("");
-    const [validTill, setValidTill] = useState("");
-
-    const payload = { couponCode, discountPercentage, validFrom, validTill };
+    const [expirationDate, setExpirationDate] = useState("");
+    const [activationDate, setActivationDate] = useState(
+      "2023-10-11T00:00:00.000Z"
+    );
+    const [discount, setDiscount] = useState();
 
     const postData = async (e) => {
       e.preventDefault();
+      const formdata = {};
+      if (couponCode) formdata.couponCode = couponCode;
+      if (expirationDate) formdata.validTill = expirationDate;
+      if (activationDate) formdata.validFrom = activationDate;
+      if (discount) formdata.discountPercentage = discount;
+
       try {
-        const { data } = await axios.post(`${Baseurl}coupon`, payload, Auth);
-        showMsg("Success", "Coupon Created", "success");
-        props.onHide();
+        axios.post(`${Baseurl}/coupon`, formdata, Auth());
         fetchData();
+        props.onHide();
+        Store.addNotification({
+          title: "Success",
+          message: "Coupon Added Successfully",
+          type: "success",
+          insert: "top",
+          container: "top-right",
+          animationIn: ["animated", "fadeIn"],
+          animationOut: ["animated", "fadeOut"],
+          dismiss: {
+            duration: 3000,
+            onScreen: true,
+          },
+        });
       } catch (e) {
         console.log(e);
-        alert(e?.response?.data?.message);
+        Store.addNotification({
+          title: "Error",
+          message: "Something went wrong",
+          type: "danger",
+          insert: "top",
+          container: "top-right",
+          animationIn: ["animated", "fadeIn"],
+          animationOut: ["animated", "fadeOut"],
+          dismiss: {
+            duration: 3000,
+            onScreen: true,
+          },
+        });
       }
     };
 
     return (
       <Modal
         {...props}
-        size="lg"
+        size="lg-down"
         aria-labelledby="contained-modal-title-vcenter"
         centered
       >
@@ -64,54 +134,55 @@ const Coupon = () => {
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={postData}>
-            <Form.Group className="mb-3" controlId="formBasicPassword">
+            <FormGroup className="mb-3">
               <Form.Label>Coupon Code</Form.Label>
               <Form.Control
                 type="text"
+                value={couponCode}
+                required
                 onChange={(e) => setCouponCode(e.target.value)}
               />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="formBasicPassword">
-              <Form.Label>Valid from</Form.Label>
-              <Form.Control
-                type="date"
-                onChange={(e) => setValidFrom(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="formBasicPassword">
-              <Form.Label>Valid Till</Form.Label>
-              <Form.Control
-                type="date"
-                onChange={(e) => setValidTill(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="formBasicPassword">
-              <Form.Label>Discount</Form.Label>
+            </FormGroup>
+
+            <FormGroup className="mb-3">
+              <Form.Label>Discount (%)</Form.Label>
               <Form.Control
                 type="number"
-                min={1}
-                onChange={(e) => setDiscountPercentage(e.target.value)}
+                value={discount}
+                required
+                onChange={(e) => setDiscount(parseInt(e.target.value))}
               />
-            </Form.Group>
+            </FormGroup>
 
-            <Button variant="primary" type="submit">
+            <FormGroup className="mb-3">
+              <Form.Label>Activation Date</Form.Label>
+              <Form.Control
+                type="date"
+                required
+                value={activationDate}
+                onChange={(e) => setActivationDate(e.target.value)}
+              />
+            </FormGroup>
+
+            <FormGroup className="mb-3">
+              <Form.Label>Expiration Date</Form.Label>
+              <Form.Control
+                type="date"
+                required
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+              />
+            </FormGroup>
+
+            <Button variant="outline-success" type="submit">
               Submit
             </Button>
           </Form>
         </Modal.Body>
+        <Modal.Footer></Modal.Footer>
       </Modal>
     );
   }
-
-  const deleteData = async (id) => {
-    try {
-      const { data } = await axios.delete(`${Baseurl}coupon/${id}`, Auth);
-      fetchData();
-      showMsg("Success", "Coupon Deleted", "success");
-    } catch (e) {
-      console.log(e);
-    }
-  };
 
   return (
     <>
@@ -122,45 +193,96 @@ const Coupon = () => {
 
       <section>
         <div className="pb-4 sticky top-0  w-full flex justify-between items-center bg-white">
-          <span className="tracking-widest text-slate-900 font-semibold uppercase ">
+          <span
+            className="tracking-widest text-slate-900 font-semibold uppercase  "
+            style={{ alignItems: "center", display: "flex" }}
+          >
             All Coupons
+            <span>
+              <Button
+                style={{
+                  height: "20px",
+                  textAlign: " center",
+                  margin: "10px",
+                  alignItems: "center",
+                  fontSize: "14px",
+                  display: "flex",
+                }}
+                onClick={() => {
+                  // validHandler();
+                  setValidCoupon(!validCoupon);
+                }}
+              >
+                {validCoupon ? "All" : "Valid"}
+              </Button>
+            </span>
           </span>
-          <Button onClick={() => setModalShow(true)} variant="outline-success">
-            Add Coupon
+          <Button
+            variant="outline-success"
+            onClick={() => {
+              setModalShow(true);
+            }}
+          >
+            Add-Coupon
           </Button>
         </div>
+      </section>
 
-        <div style={{ maxWidth: "100%", overflow: "auto" }}>
-          <Table striped bordered hover>
+      <section
+        className="main-card--container"
+        style={{
+          color: "black",
+          marginBottom: "10%",
+        }}
+      >
+        {loading ? (
+          <Loader1 />
+        ) : (
+          <Table responsive style={{ width: "950px" }}>
             <thead>
               <tr>
+                <th>No.</th>
                 <th>Coupon Code</th>
-                <th>Valid From</th>
-                <th>Valid Till</th>
-                <th>Discount</th>
+                <th>Discount (%)</th>
+                <th>IsExpired</th>
+                <th>Activation Date</th>
+                <th>ExpirationDate</th>
                 <th></th>
               </tr>
             </thead>
 
             <tbody>
-              {data?.map((i, index) => (
-                <tr key={index}>
-                  <td> {i.couponCode} </td>
-                  <td> {i.validFrom.slice(0, 10)} </td>
-                  <td> {i.validTill.slice(0, 10)} </td>
-                  <td> {i.discountPercentage} </td>
-                  <td>
-                    <AiFillDelete
-                      color="red"
-                      cursor="pointer"
-                      onClick={() => deleteData(i.id)}
-                    />
-                  </td>
-                </tr>
-              ))}
+              {data.length > 0 &&
+                data?.map((i, index) => (
+                  <tr key={index}>
+                    <td>#{index + 1} </td>
+
+                    <td>{i.couponCode}</td>
+                    <td>{i.discountPercentage}</td>
+                    <td>{i.expired ? "Expired" : "Not Expired"}</td>
+                    <td>{i.validFrom}</td>
+                    <td>{i.validTill}</td>
+
+                    <td
+                      style={{
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span className="flexCont" style={{ gap: "15px" }}>
+                        {/* <Link to={`/admin/product/${i._id}`}>
+                      <i className="fa-solid fa-eye" />
+                    </Link> */}
+                        <i
+                          className="fa-sharp fa-solid fa-trash"
+                          onClick={() => deleteData(i.id)}
+                        ></i>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </Table>
-        </div>
+        )}
       </section>
     </>
   );

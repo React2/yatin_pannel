@@ -17,7 +17,7 @@ const VehicleType = () => {
 
   const fetchData = async () => {
     try {
-      const { data } = await axios.get(`${Baseurl}vehicle-type`);
+      const { data } = await axios.get(`${Baseurl}/vehicle-type`);
       setData(data.data);
     } catch (e) {
       console.log(e);

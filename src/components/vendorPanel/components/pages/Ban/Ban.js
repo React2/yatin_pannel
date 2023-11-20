@@ -17,6 +17,44 @@ const Ban = () => {
   const [modalShow, setModalShow] = React.useState(false);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState(null);
+  const [textdata, setTextdata] = useState("");
+
+  const postData = async (e) => {
+    e.preventDefault();
+    const formdata = {
+      // image,
+      image: textdata,
+    };
+    // if (image) {
+    //   formdata.append("image", image);
+    // }
+    // if (textdata) {
+    //   formdata.append("image", textdata);
+    // }
+
+    try {
+      const { data } = await axios.post(`${Baseurl}/banner`, formdata, Auth);
+      console.log(data);
+      // fetchData();
+
+      Store.addNotification({
+        title: "Success",
+        message: "Banner Added Successfully",
+        type: "success",
+        insert: "top",
+        container: "top-right",
+        animationIn: ["animated", "fadeIn"],
+        animationOut: ["animated", "fadeOut"],
+        dismiss: {
+          duration: 3000,
+          onScreen: true,
+        },
+      });
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -60,64 +98,6 @@ const Ban = () => {
   };
 
   function MyVerticallyCenteredModal(props) {
-    const [image, setImage] = useState(null);
-    const [textdata, setTextdata] = useState("");
-
-    const postthumbImage = (e) => {
-      const data = new FormData();
-      data.append("file", e.target.files[0]);
-      data.append("upload_preset", "ml_default");
-      data.append("cloud_name", "dbcnha741");
-      fetch("https://api.cloudinary.com/v1_1/dbcnha741/image/upload", {
-        method: "post",
-        body: data,
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setImage(data.url);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    };
-
-    const postData = async (e) => {
-      e.preventDefault();
-      const formdata = new FormData();
-      if (image) {
-        formdata.append("image", image);
-      }
-      if (textdata) {
-        formdata.append("desc", textdata);
-      }
-
-      try {
-        const { data } = await axios.post(
-          `${Baseurl}/api/v1/banner/add`,
-          formdata,
-          Auth
-        );
-        console.log(data);
-        fetchData();
-        props.onHide();
-        Store.addNotification({
-          title: "Success",
-          message: "Banner Added Successfully",
-          type: "success",
-          insert: "top",
-          container: "top-right",
-          animationIn: ["animated", "fadeIn"],
-          animationOut: ["animated", "fadeOut"],
-          dismiss: {
-            duration: 3000,
-            onScreen: true,
-          },
-        });
-      } catch (e) {
-        console.log(e);
-      }
-    };
-
     return (
       <Modal
         {...props}
@@ -130,31 +110,7 @@ const Ban = () => {
             Add Banner
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={postData}>
-            <Form.Group className="mb-3" controlId="formBasicEmail">
-              <Form.Label>Image</Form.Label>
-              <Form.Control
-                type="file"
-                required
-                onChange={(e) => setImage(e.target.files[0])}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="formBasicEmail">
-              <Form.Label>Discription</Form.Label>
-              <Form.Control
-                type="text"
-                required
-                value={textdata}
-                onChange={(e) => setTextdata(e.target.value)}
-              />
-            </Form.Group>
-
-            <Button variant="outline-success" type="submit">
-              Submit
-            </Button>
-          </Form>
-        </Modal.Body>
+        <Modal.Body></Modal.Body>
         <Modal.Footer></Modal.Footer>
       </Modal>
     );
@@ -172,14 +128,14 @@ const Ban = () => {
           <span className="tracking-widest text-slate-900 font-semibold uppercase ">
             All Banner
           </span>
-          <Button
+          {/* <Button
             variant="outline-success"
             onClick={() => {
               setModalShow(true);
             }}
           >
-            Add-Banner
-          </Button>
+            Add-Banner1
+          </Button> */}
         </div>
       </section>
       <section
@@ -189,54 +145,40 @@ const Ban = () => {
           marginBottom: "10%",
         }}
       >
-        {loading ? (
-          <Loader1 />
-        ) : (
-          <Table responsive style={{ width: "950px" }}>
-            <thead>
-              <tr>
-                <th>No.</th>
-                <th>Image</th>
+        <Form
+          style={{
+            boxShadow: "rgba(0, 0, 0, 0.35) 0px 5px 15px",
+            padding: "20px",
+            width: "800px",
+            margin: "auto",
+            marginTop: "30px",
+            borderRadius: "10px",
+            marginLeft: " 100px",
+          }}
+          onSubmit={postData}
+        >
+          {/* <Form.Group className="mb-3" controlId="formBasicEmail">
+            <Form.Label>Image</Form.Label>
+            <Form.Control
+              type="file"
+              required
+              onChange={(e) => setImage(e.target.files[0])}
+            />
+          </Form.Group> */}
+          <Form.Group className="mb-3" controlId="formBasicEmail">
+            <Form.Label>Image Link</Form.Label>
+            <Form.Control
+              type="text"
+              required
+              value={textdata}
+              onChange={(e) => setTextdata(e.target.value)}
+            />
+          </Form.Group>
 
-                <th>Discription</th>
-                <th></th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {data?.map((i, index) => (
-                <tr key={index}>
-                  <td>#{index + 1} </td>
-                  <td>
-                    <img
-                      src={i.image}
-                      alt=""
-                      style={{ maxWidth: "100px", height: "70px" }}
-                    />
-                  </td>
-
-                  <td>{i.desc}</td>
-
-                  <td
-                    style={{
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span className="flexCont" style={{ gap: "15px" }}>
-                      {/* <Link to={`/admin/product/${i._id}`}>
-                      <i className="fa-solid fa-eye" />
-                    </Link> */}
-                      <i
-                        className="fa-sharp fa-solid fa-trash"
-                        onClick={() => deleteData(i._id)}
-                      ></i>
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        )}
+          <Button variant="outline-success" type="submit">
+            Submit
+          </Button>
+        </Form>
       </section>
     </>
   );

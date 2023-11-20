@@ -21,13 +21,15 @@ const VendorLogin = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     setLoading(true);
+    console.log(password);
+
     try {
-      const { data } = await axios.post(`${Baseurl}/api/v1/login`, {
-        phone: email,
+      const { data } = await axios.post(`${Baseurl}/admin/login`, {
+        email,
         password,
       });
       console.log(data);
-      localStorage.setItem("token", data?.token);
+      localStorage.setItem("token", data?.data?.loginToken);
       setLoading(false);
       showMsg("Success", "Welcome Admin", "success");
       navigate("/vendorDashboard");

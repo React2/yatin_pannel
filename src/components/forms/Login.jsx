@@ -23,7 +23,7 @@ const Login = () => {
     setLoading(true);
     try {
       console.log(Baseurl);
-      const { data } = await axios.post(Baseurl + "/api/v1/vender/login", {
+      const { data } = await axios.post(Baseurl + "/admin/login", {
         email,
         password,
       });

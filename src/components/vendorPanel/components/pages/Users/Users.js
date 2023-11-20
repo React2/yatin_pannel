@@ -21,9 +21,9 @@ const Users = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(`${Baseurl}/api/v1/admin/users`, Auth());
-      console.log(data?.users);
-      setData(data?.users);
+      const { data } = await axios.get(`${Baseurl}/user/all`, Auth());
+      console.log(data.data);
+      setData(data?.data);
     } catch (e) {
       console.log(e);
     }
@@ -242,10 +242,10 @@ const Users = () => {
                 <th>No.</th>
                 <th>Image</th>
                 <th>Name</th>
-                <th>Email</th>
                 <th>Phone</th>
+                <th>Deliveries PerWeek (Lower/Upper)</th>
                 <th>Verified</th>
-                <th></th>
+                {/* <th></th> */}
               </tr>
             </thead>
 
@@ -255,15 +255,25 @@ const Users = () => {
                   <td>#{index + 1} </td>
                   <td>
                     <img
-                      src={i.profile}
+                      src={i.profileImage}
                       alt=""
                       style={{ maxWidth: "100px", height: "70px" }}
                     />
                   </td>
 
                   <td>{i.name}</td>
-                  <td>{i.email}</td>
-                  <td>{i.phone}</td>
+                  <td>
+                    {i.countryCode} {i.phoneNumber}
+                  </td>
+                  <td>
+                    {i.deliveriesPerWeek?.lower
+                      ? i.deliveriesPerWeek?.lower
+                      : 0}{" "}
+                    /{" "}
+                    {i.deliveriesPerWeek?.upper
+                      ? i.deliveriesPerWeek?.upper
+                      : 0}
+                  </td>
                   <td>{i.verified ? "Yes" : "No"}</td>
 
                   <td
@@ -275,10 +285,10 @@ const Users = () => {
                       {/* <Link to={`/admin/product/${i._id}`}>
                       <i className="fa-solid fa-eye" />
                     </Link> */}
-                      <i
+                      {/* <i
                         className="fa-sharp fa-solid fa-trash"
                         onClick={() => deleteData(i._id)}
-                      ></i>
+                      ></i> */}
                     </span>
                   </td>
                 </tr>

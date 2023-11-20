@@ -1,224 +1,191 @@
 /** @format */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import HOC from "../../layout/HOC";
-import Table from "react-bootstrap/Table";
-import { Button, Form } from "react-bootstrap";
+import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
-import { useState } from "react";
+import { toast } from "react-toastify";
+import Button from "react-bootstrap/Button";
 import axios from "axios";
 import { Baseurl, Auth, showMsg } from "../../../../../Baseurl";
+import { Link } from "react-router-dom";
+import { FormGroup, Table } from "react-bootstrap";
+import { Store } from "react-notifications-component";
+import Loader1 from "../../../../../Loader/Loader";
 
 const Vehicle = () => {
   const [modalShow, setModalShow] = React.useState(false);
-  const [edit, setEdit] = useState(false);
   const [data, setData] = useState([]);
-  const [id, setId] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const { data } = await axios.get(`${Baseurl}vehicle/all`, Auth);
-      setData(data.data);
+      const { data } = await axios.get(
+        `${Baseurl}/api/v1/driver/alldriver`,
+        Auth()
+      );
+      console.log(data);
+      setData(data?.message);
     } catch (e) {
       console.log(e);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  function MyVerticallyCenteredModal(props) {
-    const [name, setName] = useState("");
-    const [loadWeight, setLoadWeight] = useState("");
-    const [baseFare, setBaseFare] = useState("");
-    const [pricePerKm, setPricePerKm] = useState("");
-    const [pricePerMin, setPricePerMin] = useState("");
-    const [dimensionImage, setDimesionImage] = useState("");
-    const [image, setImage] = useState("");
-    const [wheels, setWheels] = useState("");
-    const [roadClearance, setRoadClearance] = useState("");
-
-    const payload = {
-      name,
-      loadWeight,
-      baseFare,
-      pricePerKm,
-      pricePerMin,
-      dimensionImage,
-      image,
-      wheels,
-      roadClearance,
-    };
-
-    const postthumbImage = (e, type) => {
-      const data = new FormData();
-      data.append("file", e.target.files[0]);
-      data.append("upload_preset", "ml_default");
-      data.append("cloud_name", "dbcnha741");
-      fetch("https://api.cloudinary.com/v1_1/dbcnha741/image/upload", {
-        method: "post",
-        body: data,
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (type === "dimension") {
-            setDimesionImage(data.url);
-          } else {
-            setImage(data.url);
-          }
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    };
-
-    const postData = async (e) => {
-      e.preventDefault();
-      try {
-        const { data } = await axios.post(
-          `${Baseurl}vehicle-type`,
-          payload,
-          Auth
-        );
-        const msg = data.msg;
-        showMsg("Success", msg, "success");
-        props.onHide();
-        fetchData();
-      } catch (e) {
-        console.log(e);
-      }
-    };
-
-    const putHandler = async (e) => {
-      e.preventDefault();
-      try {
-        const { data } = await axios.put(
-          `${Baseurl}vehicle-type/${id}`,
-          payload,
-          Auth
-        );
-        const msg = data.msg;
-        showMsg("Success", msg, "success");
-        props.onHide();
-        fetchData();
-      } catch (e) {
-        console.log(e);
-      }
-    };
-    return (
-      <Modal
-        {...props}
-        size="lg"
-        aria-labelledby="contained-modal-title-vcenter"
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title id="contained-modal-title-vcenter">
-            {edit ? "Update" : "Create New"}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={edit ? putHandler : postData}>
-            <Form.Group className="mb-3">
-              <Form.Label>Image</Form.Label>
-              <Form.Control type="file" onChange={(e) => postthumbImage(e)} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Dimension Image</Form.Label>
-              <Form.Control
-                type="file"
-                onChange={(e) => postthumbImage(e, "dimension")}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                type="text"
-                required
-                onChange={(e) => setName(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Load Weight</Form.Label>
-              <Form.Control
-                type="number"
-                min={0}
-                required
-                onChange={(e) => setLoadWeight(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Base Fare</Form.Label>
-              <Form.Control
-                type="number"
-                min={0}
-                required
-                onChange={(e) => setBaseFare(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Price per Km</Form.Label>
-              <Form.Control
-                type="number"
-                min={0}
-                required
-                onChange={(e) => setPricePerKm(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Price per Min</Form.Label>
-              <Form.Control
-                type="number"
-                min={0}
-                required
-                onChange={(e) => setPricePerMin(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Wheels</Form.Label>
-              <Form.Control
-                type="number"
-                min={0}
-                required
-                onChange={(e) => setWheels(e.target.value)}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Road Clearance</Form.Label>
-              <Form.Control
-                type="text"
-                required
-                onChange={(e) => setRoadClearance(e.target.value)}
-              />
-            </Form.Group>
-
-            <Button variant="success" type="submit">
-              Submit
-            </Button>
-          </Form>
-        </Modal.Body>
-      </Modal>
-    );
-  }
-
   const deleteData = async (id) => {
     try {
-      const { data } = await axios.delete(`${Baseurl}vehicle-type/${id}`, Auth);
-      const msg = "Vehicle Type Deleted";
-      showMsg("Success", msg, "success");
+      const { data } = await axios.delete(`${Baseurl}/api/v1/driver/${id}`);
+      Store.addNotification({
+        title: "Success",
+        message: "User Deleted Successfully",
+        type: "success",
+        insert: "top",
+        container: "top-right",
+        animationIn: ["animated", "fadeIn"],
+        animationOut: ["animated", "fadeOut"],
+        dismiss: {
+          duration: 3000,
+          onScreen: true,
+        },
+      });
+
       fetchData();
     } catch (e) {
       console.log(e);
     }
   };
+
+  function MyVerticallyCenteredModal(props) {
+    const [couponCode, setCouponCode] = useState("");
+    const [expirationDate, setExpirationDate] = useState("");
+    const [activationDate, setActivationDate] = useState(
+      "2023-10-11T00:00:00.000Z"
+    );
+    const [discount, setDiscount] = useState();
+    const [minOrder, setMinOrder] = useState();
+
+    const postData = async (e) => {
+      e.preventDefault();
+      const formdata = {};
+      if (couponCode) formdata.couponCode = couponCode;
+      if (expirationDate) formdata.expirationDate = expirationDate;
+      if (activationDate) formdata.activationDate = activationDate;
+      if (discount) formdata.discount = discount;
+      if (minOrder) formdata.minOrder = minOrder;
+
+      try {
+        axios.post(`${Baseurl}/api/v1/coupon`, formdata, Auth());
+        fetchData();
+        props.onHide();
+        Store.addNotification({
+          title: "Success",
+          message: "Coupon Added Successfully",
+          type: "success",
+          insert: "top",
+          container: "top-right",
+          animationIn: ["animated", "fadeIn"],
+          animationOut: ["animated", "fadeOut"],
+          dismiss: {
+            duration: 3000,
+            onScreen: true,
+          },
+        });
+      } catch (e) {
+        console.log(e);
+        Store.addNotification({
+          title: "Error",
+          message: "Something went wrong",
+          type: "danger",
+          insert: "top",
+          container: "top-right",
+          animationIn: ["animated", "fadeIn"],
+          animationOut: ["animated", "fadeOut"],
+          dismiss: {
+            duration: 3000,
+            onScreen: true,
+          },
+        });
+      }
+    };
+
+    return (
+      <Modal
+        {...props}
+        size="lg-down"
+        aria-labelledby="contained-modal-title-vcenter"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title id="contained-modal-title-vcenter">
+            Add Coupon
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={postData}>
+            <FormGroup className="mb-3">
+              <Form.Label>Coupon Code</Form.Label>
+              <Form.Control
+                type="text"
+                value={couponCode}
+                required
+                onChange={(e) => setCouponCode(e.target.value)}
+              />
+            </FormGroup>
+
+            <FormGroup className="mb-3">
+              <Form.Label>Discount (%)</Form.Label>
+              <Form.Control
+                type="number"
+                value={discount}
+                required
+                onChange={(e) => setDiscount(parseInt(e.target.value))}
+              />
+            </FormGroup>
+
+            <FormGroup className="mb-3">
+              <Form.Label>Minimum Order</Form.Label>
+              <Form.Control
+                type="number"
+                required
+                value={minOrder}
+                onChange={(e) => setMinOrder(parseInt(e.target.value))}
+              />
+            </FormGroup>
+
+            <FormGroup className="mb-3">
+              <Form.Label>Activation Date</Form.Label>
+              <Form.Control
+                type="date"
+                required
+                value={activationDate}
+                onChange={(e) => setActivationDate(e.target.value)}
+              />
+            </FormGroup>
+
+            <FormGroup className="mb-3">
+              <Form.Label>Expiration Date</Form.Label>
+              <Form.Control
+                type="date"
+                required
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+              />
+            </FormGroup>
+
+            <Button variant="outline-success" type="submit">
+              Submit
+            </Button>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer></Modal.Footer>
+      </Modal>
+    );
+  }
 
   return (
     <>
@@ -226,59 +193,84 @@ const Vehicle = () => {
         show={modalShow}
         onHide={() => setModalShow(false)}
       />
+
       <section>
         <div className="pb-4 sticky top-0  w-full flex justify-between items-center bg-white">
           <span className="tracking-widest text-slate-900 font-semibold uppercase ">
-            All Vehicle
+            All Drivers
           </span>
           {/* <Button
             variant="outline-success"
             onClick={() => {
-              setEdit(false);
               setModalShow(true);
             }}
           >
-            Create New
+            Add-Driver
           </Button> */}
         </div>
+      </section>
 
-        <div className="Table_Component">
-          <Table striped bordered hover>
+      <section
+        className="main-card--container"
+        style={{
+          color: "black",
+          marginBottom: "10%",
+        }}
+      >
+        {loading ? (
+          <Loader1 />
+        ) : (
+          <Table responsive style={{ width: "950px" }}>
             <thead>
               <tr>
-                <th>Owner</th>
-                <th>Vehicle Number</th>
-                <th>Vehicle Type</th>
-                {/* <th></th> */}
+                <th>No.</th>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Duty</th>
+                <th>Status</th>
+                <th></th>
               </tr>
             </thead>
+
             <tbody>
               {data?.map((i, index) => (
                 <tr key={index}>
-                  <td> {i.owner?.name} </td>
-                  <td> {i.vehicleNumber} </td>
-                  <td> {i.vehicleType?.name} </td>
-                  {/* <td>
-                    <span className="flexCont">
+                  <td>#{index + 1} </td>
+                  <img
+                    src={i.image}
+                    alt=""
+                    style={{ maxWidth: "100px", height: "110px" }}
+                  />
+                  {/* <td></td> */}
+
+                  <td>{i.Name}</td>
+                  <td>{i.email}</td>
+                  <td>{i.phone}</td>
+                  <td>{i.duty ? "Active" : "Inactive"}</td>
+                  <td>{i.status}</td>
+
+                  <td
+                    style={{
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span className="flexCont" style={{ gap: "15px" }}>
+                      {/* <Link to={`/admin/product/${i._id}`}>
+                      <i className="fa-solid fa-eye" />
+                    </Link> */}
                       <i
-                        className="fa-solid fa-trash"
-                        onClick={() => deleteData(i.id)}
-                      ></i>
-                      <i
-                        className="fa-solid fa-pen-to-square"
-                        onClick={() => {
-                          setEdit(true);
-                          setId(i.id);
-                          setModalShow(true);
-                        }}
+                        className="fa-sharp fa-solid fa-trash"
+                        onClick={() => deleteData(i._id)}
                       ></i>
                     </span>
-                  </td> */}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </Table>
-        </div>
+        )}
       </section>
     </>
   );

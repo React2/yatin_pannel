@@ -2,8 +2,7 @@
 
 import { Store } from "react-notifications-component";
 
-export const Baseurl =
-  "https://t9vc9vued3.execute-api.ap-south-1.amazonaws.com/dev";
+export const Baseurl = "https://wefast-logistic-backend-app.vercel.app";
 
 export const Auth = () => ({
   headers: {

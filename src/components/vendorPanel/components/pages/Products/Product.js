@@ -1,92 +1,150 @@
 /** @format */
-import React, { useEffect, useRef, useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import HOC from "../../layout/HOC";
-import Table from "react-bootstrap/Table";
-import OwlCarousel from "react-owl-carousel2";
-import "react-owl-carousel2/lib/styles.css";
-import { Button, FloatingLabel, Form, Modal } from "react-bootstrap";
-import axios from "axios";
+import { Form, FormGroup, Button } from "react-bootstrap";
+import Modal from "react-bootstrap/Modal";
 import { toast } from "react-toastify";
+
+import axios from "axios";
+import { Baseurl, Auth, showMsg } from "../../../../../Baseurl";
+import { Link } from "react-router-dom";
+import { Table } from "react-bootstrap";
+import { Store } from "react-notifications-component";
+import Loader1 from "../../../../../Loader/Loader";
 
 const Product = () => {
   const [modalShow, setModalShow] = React.useState(false);
   const [data, setData] = useState([]);
-  const token = localStorage.getItem("token");
+  const [loading, setLoading] = useState(false);
 
-  // Owl Carousel
-  const carouselRef = useRef(null);
-  const options = {
-    items: 1,
-    nav: false,
-    rewind: true,
-    autoplay: true,
-    autoplayTimeout: 5000,
-    autoplayHoverPause: true,
-    onInitialized: () => {
-      const carousel = carouselRef.current;
-      const items = carousel.querySelectorAll(".owl-item");
-      const containerWidth = carousel.clientWidth;
-
-      items.forEach((item) => {
-        item.style.width = `${containerWidth}px`;
-      });
-    },
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const { data } = await axios.get(`${Baseurl}/api/v1/products`, Auth());
+      console.log(data);
+      setData(data?.products);
+    } catch (e) {
+      console.log(e);
+    }
+    setLoading(false);
   };
-  //Modal
-  function MyVerticallyCenteredModal(props) {
-    const [categoryP, setP] = useState([]);
 
-    const fetchCategory = async () => {
-      try {
-        const { data } = await axios.get(
-          "http://ec2-65-1-248-95.ap-south-1.compute.amazonaws.com:5004/api/v1//catogory/getAllCategory"
-        );
-        setP(data);
-      } catch (e) {
-        console.log(e);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const deleteData = async (id) => {
+    try {
+      const { data } = await axios.delete(
+        `${Baseurl}/api/v1/admin/product/${id}`,
+        Auth()
+      );
+      Store.addNotification({
+        title: "Success",
+        message: "Product Deleted Successfully",
+        type: "success",
+        insert: "top",
+        container: "top-right",
+        animationIn: ["animated", "fadeIn"],
+        animationOut: ["animated", "fadeOut"],
+        dismiss: {
+          duration: 3000,
+          onScreen: true,
+        },
+      });
+
+      fetchData();
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  function MyVerticallyCenteredModal(props) {
+    const [name, setName] = useState("");
+    const [image, setImage] = useState([]);
+    const [description, setDescription] = useState("");
+    const [price, setPrice] = useState("");
+    const [countInStock, setCountInStock] = useState("");
+    const [category, setCategory] = useState("");
+    const [rating, setRating] = useState("");
+    const [subCategory, setSubCategory] = useState("");
+    const [categoryId, setCategoryId] = useState("");
+    const [subCategoryId, setSubCategoryId] = useState("");
+
+    const getAllCategories = () => {
+      const authHeaders = Auth();
+
+      axios
+        .get(`${Baseurl}/api/v1/catogory/getAllCategory`, authHeaders)
+        .then((res) => {
+          console.log(res.data?.categories);
+          setCategory(res.data?.categories);
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    };
+
+    const getAllSubCategory = () => {
+      if (categoryId) {
+        axios
+          .get(
+            Baseurl +
+              `/api/v1/admin/subCategory/getAllsubCategory/${categoryId}`
+          )
+          .then((res) => {
+            setSubCategory(res?.data?.data);
+            console.log(res?.data);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
       }
     };
 
     useEffect(() => {
-      if (modalShow === true) {
-        fetchCategory();
+      getAllCategories();
+      if (categoryId) {
+        getAllSubCategory();
       }
-    }, []);
-
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [price, setPrice] = useState("");
-    const [ratings, setRating] = useState("");
-    const [size, setSize] = useState("");
-    const [colors, setColor] = useState("");
-    const [Stock, setStock] = useState("");
-    const [category, setCategory] = useState("");
-    const [image, setImage] = useState("");
+    }, [categoryId]);
 
     const postData = async (e) => {
       e.preventDefault();
-      const fd = new FormData();
-      fd.append("name", name);
-      fd.append("description", description);
-      fd.append("price", price);
-      fd.append("ratings", ratings);
-      fd.append("size", size);
-      fd.append("colors", colors);
-      fd.append("Stock", Stock);
-      fd.append("category", category);
-      Array.from(image).forEach((img) => {
-        fd.append("image", img);
-      });
-
+      const formdata = new FormData();
+      if (name) formdata.append("name", name);
+      if (image) formdata.append("image", image);
+      if (description) formdata.append("description", description);
+      if (price) formdata.append("price", price);
+      if (countInStock) formdata.append("countInStock", countInStock);
+      if (category) formdata.append("category", category);
+      if (rating) formdata.append("rating", rating);
+      if (subCategory) formdata.append("subCategory", subCategory);
+      if (categoryId) formdata.append("categoryId", categoryId);
+      if (subCategoryId) formdata.append("subCategoryId", subCategoryId);
       try {
-        const { data } = await axios.post(
-          "http://ec2-65-1-248-95.ap-south-1.compute.amazonaws.com:5004/api/v1/admin/product/new",
-          fd
-        );
+        axios
+          .post(Baseurl + "/api/v1/vender/product/new", formdata, Auth())
+          .then((res) => {
+            console.log(res);
+          });
         console.log(data);
-        props.onHide();
         fetchData();
-        alert("Product Added");
+        props.onHide();
+        Store.addNotification({
+          title: "Success",
+          message: "Product Added Successfully",
+          type: "success",
+          insert: "top",
+          container: "top-right",
+          animationIn: ["animated", "fadeIn"],
+          animationOut: ["animated", "fadeOut"],
+          dismiss: {
+            duration: 3000,
+            onScreen: true,
+          },
+        });
       } catch (e) {
         console.log(e);
       }
@@ -95,7 +153,7 @@ const Product = () => {
     return (
       <Modal
         {...props}
-        size="lg"
+        size="lg-down"
         aria-labelledby="contained-modal-title-vcenter"
         centered
       >
@@ -106,86 +164,85 @@ const Product = () => {
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={postData}>
-            <Form.Group className="mb-3">
-              <Form.Label>Product Image</Form.Label>
+            <FormGroup className="mb-3">
+              <Form.Label>Image</Form.Label>
               <Form.Control
                 type="file"
-                onChange={(e) => setImage(e.target.files)}
                 multiple
+                required
+                onChange={(e) => setImage(e.target.files[0])}
               />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Product Name</Form.Label>
+            </FormGroup>
+
+            <FormGroup className="mb-3">
+              <Form.Label>Name</Form.Label>
               <Form.Control
                 type="text"
+                required
                 onChange={(e) => setName(e.target.value)}
               />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <FloatingLabel
-                controlId="floatingTextarea"
-                label="Description"
-                className="mb-3"
-              >
-                <Form.Control
-                  as="textarea"
-                  placeholder="Leave a comment here"
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </FloatingLabel>
-            </Form.Group>
-            <Form.Group className="mb-3">
+            </FormGroup>
+
+            <FormGroup className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                type="text"
+                required
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </FormGroup>
+
+            <FormGroup className="mb-3">
               <Form.Label>Price</Form.Label>
               <Form.Control
                 type="number"
-                min={0}
+                required
                 onChange={(e) => setPrice(e.target.value)}
               />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Size Available</Form.Label>
+            </FormGroup>
+
+            <FormGroup className="mb-3">
+              <Form.Label>CountInStock</Form.Label>
               <Form.Control
-                type="text"
-                onChange={(e) => setSize(e.target.value)}
+                type="number"
+                required
+                onChange={(e) => setCountInStock(e.target.value)}
               />
-            </Form.Group>
-            <Form.Group className="mb-3">
+            </FormGroup>
+
+            <FormGroup className="mb-3">
               <Form.Label>Category</Form.Label>
               <Form.Select
                 aria-label="Default select example"
-                onChange={(e) => setCategory(e.target.value)}
+                required
+                onChange={(e) => setCategoryId(e.target.value)}
               >
-                <option>Open this select menu</option>
-                {categoryP?.categories?.map((i, index) => (
-                  <option value={i._id} key={index}>
-                    {" "}
-                    {i.name}{" "}
-                  </option>
-                ))}
+                <option>Select Category</option>
+                {category.length > 0 &&
+                  category?.map((i, index) => (
+                    <option key={index} value={i._id}>
+                      {i.name}
+                    </option>
+                  ))}
               </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Stock</Form.Label>
-              <Form.Control
-                type="number"
-                min={0}
-                onChange={(e) => setStock(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Colors Available</Form.Label>
-              <Form.Control
-                type="text"
-                onChange={(e) => setColor(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Ratings</Form.Label>
-              <Form.Control
-                type="text"
-                onChange={(e) => setRating(e.target.value)}
-              />
-            </Form.Group>
+            </FormGroup>
+            <FormGroup className="mb-3">
+              <Form.Label>SubCategory</Form.Label>
+              <Form.Select
+                aria-label="Default select example"
+                required
+                onChange={(e) => setSubCategoryId(e.target.value)}
+              >
+                <option>Select Category</option>
+                {subCategory.length > 0 &&
+                  subCategory?.map((i, index) => (
+                    <option key={index} value={i._id}>
+                      {i.subCategory}
+                    </option>
+                  ))}
+              </Form.Select>
+            </FormGroup>
+
             <Button variant="outline-success" type="submit">
               Submit
             </Button>
@@ -196,109 +253,89 @@ const Product = () => {
     );
   }
 
-  const fetchData = async () => {
-    try {
-      const { data } = await axios.get(
-        "http://ec2-65-1-248-95.ap-south-1.compute.amazonaws.com:5004/api/v1/products"
-      );
-      setData(data);
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const deleteData = async (id) => {
-    try {
-      const { data } = await axios.delete(
-        `http://ec2-65-1-248-95.ap-south-1.compute.amazonaws.com:5004/api/v1/admin/product/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log(data);
-      fetchData();
-      toast.success("Product Deleted");
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   return (
     <>
       <MyVerticallyCenteredModal
         show={modalShow}
         onHide={() => setModalShow(false)}
       />
+
       <section>
         <div className="pb-4 sticky top-0  w-full flex justify-between items-center bg-white">
           <span className="tracking-widest text-slate-900 font-semibold uppercase ">
             All Products
           </span>
-          <Button variant="outline-success" onClick={() => setModalShow(true)}>
-            Add Product
+          <Button
+            variant="outline-success"
+            onClick={() => {
+              setModalShow(true);
+            }}
+          >
+            Add-Product
           </Button>
         </div>
+      </section>
 
-        <div style={{ maxWidth: "100%", overflow: "auto" }}>
-          <Table striped bordered hover>
+      <section
+        className="main-card--container"
+        style={{
+          color: "black",
+          marginBottom: "10%",
+        }}
+      >
+        {loading ? (
+          <Loader1 />
+        ) : (
+          <Table responsive style={{ width: "950px" }}>
             <thead>
               <tr>
-                <th>Product Image</th>
-                <th>Product Name</th>
-                <th>Description</th>
-                <th>Price</th>
-                <th>Size Available</th>
+                <th>No.</th>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Price </th>
                 <th>Ratings</th>
-                <th>Category</th>
-                <th>Stock</th>
-                <th>Number of Reviews</th>
-                <th>Color Available</th>
-                <th>Actions</th>
+                <th>Category Name</th>
+                <th></th>
               </tr>
             </thead>
+
             <tbody>
-              {data?.products?.map((i, index) => (
+              {data?.map((i, index) => (
                 <tr key={index}>
+                  <td>#{index + 1} </td>
                   <td>
-                    <OwlCarousel
-                      options={options}
-                      style={{ width: "120px" }}
-                      ref={carouselRef}
-                    >
-                      {i.images?.map((img, index) => (
-                        <img src={img.img} alt="" key={index} />
-                      ))}
-                    </OwlCarousel>
+                    <img
+                      src={i.images[0]?.img}
+                      alt=""
+                      style={{ maxWidth: "100px", height: "70px" }}
+                    />
                   </td>
-                  <td>{i.name} </td>
-                  <td>{i.description}</td>
-                  <td>₹{i.price}</td>
-                  <td> {i.size} </td>
+
+                  <td>{i.name}</td>
+                  <td>{i.price}</td>
                   <td>{i.ratings}</td>
-                  <td>{i.category?.name} </td>
-                  <td>{i.Stock} </td>
-                  <td> {i.numOfReviews} </td>
-                  <td> {i.colors} </td>
-                  <td>
-                    <div style={{ display: "flex", gap: "10px" }}>
+                  <td>{i.category?.name}</td>
+
+                  <td
+                    style={{
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span className="flexCont" style={{ gap: "15px" }}>
+                      {/* <Link to={`/admin/product/${i._id}`}>
+                      <i className="fa-solid fa-eye" />
+                    </Link> */}
                       <i
-                        class="fa-solid fa-trash"
-                        style={{ color: "red", cursor: "pointer" }}
+                        className="fa-sharp fa-solid fa-trash"
                         onClick={() => deleteData(i._id)}
                       ></i>
-                    </div>
+                    </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </Table>
-        </div>
+        )}
       </section>
     </>
   );

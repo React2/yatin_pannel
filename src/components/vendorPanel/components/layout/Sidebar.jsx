@@ -63,11 +63,11 @@ const Sidebar = ({ hamb, setHamb }) => {
     //   link: "/subAdmin",
     //   name: "Sub-Admin",
     // },
-    {
-      icon: <BiCategory className="text-xl mr-3" />,
-      link: "/category",
-      name: "Categories",
-    },
+    // {
+    //   icon: <BiCategory className="text-xl mr-3" />,
+    //   link: "/category",
+    //   name: "Categories",
+    // },
     // {
     //   icon: <FaProductHunt className="text-xl mr-3 rounded-full " />,
     //   link: "/product",
